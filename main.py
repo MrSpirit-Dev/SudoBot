@@ -5,22 +5,18 @@ from renderer import render_board, sudoku_to_grid
 from storage import save_games, load_games
 from sudoku import SudokuGame
 import time
+import os
 
 COOLDOWNS = {}
 
 COOLDOWN_TIERS = [5, 10, 30, 60, 120, 300]
 MAX_TIER = len(COOLDOWN_TIERS) - 1
 
-
-
-def save_active_games():
-
-    data = {}
-
-    for channel_id, game in ACTIVE_GAMES.items():
-        data[str(channel_id)] = game.to_dict()
-
-    save_games(data)
+GUILDS = [
+    discord.Object(id=1514625466244534272),
+    discord.Object(id=1501492936175521802),
+    discord.Object(id=1162929561466581152)
+]
 
 
 from sudoku import (
@@ -33,17 +29,22 @@ ACTIVE_GAMES = {}
 
 class Client(commands.Bot):
     async def on_ready(self):
-        print(f"Logged on as {self.user} !")
+        print(f"Logged on as {self.user}!")
 
         try:
-            guild = discord.Object(id=1514625466244534272)
-            synced = await self.tree.sync(guild = guild)
-            print(f"Synced {len(synced)} commands to guild {guild.id}")
+            total_synced = 0
+
+            for guild in GUILDS:
+                synced = await self.tree.sync(guild=guild)
+                total_synced += len(synced)
+                print(f"Synced {len(synced)} commands to guild {guild.id}")
+
+            print(f"Total synced commands: {total_synced}")
+
             load_active_games()
 
-            
         except Exception as e:
-            print("error syncing commands: ", e)
+            print("error syncing commands:", e)
 
     async def on_message(self,message):
         if message.author == self.user:
@@ -125,9 +126,18 @@ intents.message_content = True
 
 client = Client(command_prefix = "!", intents = intents)
 
-GUILD_ID = discord.Object(id=1514625466244534272)
+GUILD_IDS = [
+    1514625466244534272,
+    1501492936175521802,
+    1162929561466581152
+]
 
-@client.tree.command(name="sudoku-bot", description = "Connection Check ",guild = GUILD_ID)
+@client.tree.command(name="sudoku-bot", description = "Connection Check ")
+@app_commands.guilds(
+    discord.Object(id=1514625466244534272),
+    discord.Object(id=1501492936175521802),
+    discord.Object(id=1162929561466581152)
+)
 async def sayHello(interaction : discord.Interaction):
     await interaction.response.send_message("Check bot connection - **HELLO**")
 
@@ -190,7 +200,11 @@ class difficultyMenu(discord.ui.Select):
 @client.tree.command(
     name="sudoku-place",
     description="Attempt to place a digit",
-    guild=GUILD_ID
+)
+@app_commands.guilds(
+    discord.Object(id=1514625466244534272),
+    discord.Object(id=1501492936175521802),
+    discord.Object(id=1162929561466581152)
 )
 async def sudoku_place(
     interaction: discord.Interaction,
@@ -289,7 +303,7 @@ async def sudoku_place(
     )
     if solved:
 
-        embed_final = discord.Embed(title = "🎉 Sudoku Solved!", description = "Spirit placed the final number !", color = 0x9C88FF)
+        embed_final = discord.Embed(title = "🎉 Sudoku Solved!", description = f"**{player_name}** placed the final number !", color = 0x9C88FF)
         embed.set_footer(
             text=f"Difficulty: {game.difficulty}"
         )
@@ -306,8 +320,12 @@ async def sudoku_place(
 
 @client.tree.command(
     name="sudoku-board",
-    description="View active board",
-    guild=GUILD_ID
+    description="View active board"
+)
+@app_commands.guilds(
+    discord.Object(id=1514625466244534272),
+    discord.Object(id=1501492936175521802),
+    discord.Object(id=1162929561466581152)
 )
 async def sudoku_show(
     interaction: discord.Interaction
@@ -340,8 +358,12 @@ async def sudoku_show(
 
 @client.tree.command(
     name="sudoku-end",
-    description="End the current Sudoku game",
-    guild=GUILD_ID
+    description="End the current Sudoku game"
+)
+@app_commands.guilds(
+    discord.Object(id=1514625466244534272),
+    discord.Object(id=1501492936175521802),
+    discord.Object(id=1162929561466581152)
 )
 async def sudoku_end(
     interaction: discord.Interaction
@@ -407,7 +429,12 @@ class difficultySelector(discord.ui.View):
         self.add_item(difficultyMenu())
 
  
-@client.tree.command(name="sudoku-new", description = "Start a new Sudoku game !",guild = GUILD_ID)
+@client.tree.command(name="sudoku-new", description = "Start a new Sudoku game !")
+@app_commands.guilds(
+    discord.Object(id=1514625466244534272),
+    discord.Object(id=1501492936175521802),
+    discord.Object(id=1162929561466581152)
+)
 async def tryTest(interaction: discord.Interaction):
 
     await interaction.response.send_message(
@@ -418,4 +445,9 @@ async def tryTest(interaction: discord.Interaction):
 
 
 
-client.run("MTUxNDMxMzUwNTM3MTcxNzg2Mw.GOYkkv._ZB7plgZBhQV7Ay8ASMBnotWA6DOqhtMcycXZs")
+token = os.getenv("DISCORD_TOKEN")
+
+if not token:
+    raise RuntimeError("DISCORD_TOKEN environment variable not found")
+
+client.run(token)

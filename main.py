@@ -208,6 +208,29 @@ class difficultyMenu(discord.ui.Select):
         )
         save_active_games()
 
+@client.tree.command(
+    name="sudoku-theme",
+    description="Change board theme"
+)
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.choices(
+    theme=[
+        app_commands.Choice(name="Default", value="default"),
+        app_commands.Choice(name="Forest", value="forest"),
+        app_commands.Choice(name="Royal", value="royal")
+    ]
+)
+async def sudoku_theme(
+    interaction: discord.Interaction,
+    theme: str
+):
+    global CURRENT_THEME
+
+    CURRENT_THEME = theme
+
+    await interaction.response.send_message(
+        f"🎨 Theme changed to **{theme}**"
+    )
 
 @client.tree.command(
     name="sudoku-place",

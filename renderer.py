@@ -1,34 +1,25 @@
 from PIL import Image, ImageDraw, ImageFont
-
-# =========================
-# THEME
-# =========================
-
-BACKGROUND_COLOR = "#232f3b"
-
-BOX_COLOR_A = "#2F4154"
-BOX_COLOR_B = "#263445"
-
-GRID_COLOR = "#c3cbeb"
-
-GRID_SHADOW_COLOR = "#000000"
-
-COORDINATE_COLOR = "#abc5e0"
-
-PREFILLED_NUMBER_COLOR = "#abc5e0"
-PLAYER_NUMBER_COLOR = "#ffffff"
-
-NUMBER_Y_OFFSET = -8
-
-SHADOW_OFFSET = 2
-SHADOW_ALPHA = 80  # soft feel
+from themes import theme
 
 
 # =========================
 # RENDER FUNCTION
 # =========================
 
-def render_board(board, original_board):
+def render_board(board, original_board, theme_name="default"):
+
+    theme = THEMES.get(theme_name, THEMES["default"])
+
+    BACKGROUND_COLOR = theme["BACKGROUND_COLOR"]
+    BOX_COLOR_A = theme["BOX_COLOR_A"]
+    BOX_COLOR_B = theme["BOX_COLOR_B"]
+    GRID_COLOR = theme["GRID_COLOR"]
+    GRID_SHADOW_COLOR = theme["GRID_SHADOW_COLOR"]
+    COORDINATE_COLOR = theme["COORDINATE_COLOR"]
+    PREFILLED_NUMBER_COLOR = theme["PREFILLED_NUMBER_COLOR"]
+    PLAYER_NUMBER_COLOR = theme["PLAYER_NUMBER_COLOR"]
+
+
     img = Image.new("RGB", (1000, 1000), BACKGROUND_COLOR)
     draw = ImageDraw.Draw(img)
 

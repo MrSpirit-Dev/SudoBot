@@ -15,7 +15,7 @@ from sudoku import (
 
 COOLDOWNS = {}
 
-COOLDOWN_TIERS = [5, 10, 30, 60, 120, 300]
+COOLDOWN_TIERS = [30,60,120,200,300,450]
 MAX_TIER = len(COOLDOWN_TIERS) - 1
 
 GUILD_IDS = [
@@ -374,35 +374,35 @@ async def sudoku_show(
         file=file
     )
 
-@client.tree.command(
-    name="sudoku-end",
-    description="End the current Sudoku game"
-)
-@app_commands.default_permissions(manage_guild=True)
-@app_commands.guilds(*GUILDS)
-async def sudoku_end(
-    interaction: discord.Interaction
-):
+# @client.tree.command(
+#     name="sudoku-end",
+#     description="End the current Sudoku game"
+# )
+# @app_commands.default_permissions(manage_guild=True)
+# @app_commands.guilds(*GUILDS)
+# async def sudoku_end(
+#     interaction: discord.Interaction
+# ):
 
-    game = ACTIVE_GAMES.get(
-        interaction.channel.id
-    )
+#     game = ACTIVE_GAMES.get(
+#         interaction.channel.id
+#     )
 
-    if game is None:
-        await interaction.response.send_message(
-            "🧩 No active Sudoku session here."
-        )
-        return
+#     if game is None:
+#         await interaction.response.send_message(
+#             "🧩 No active Sudoku session here."
+#         )
+#         return
 
-    del ACTIVE_GAMES[
-        interaction.channel.id
-    ]
+#     del ACTIVE_GAMES[
+#         interaction.channel.id
+#     ]
 
-    save_active_games()
+#     save_active_games()
 
-    await interaction.response.send_message(
-        f"🛑 Sudoku ended by **{interaction.user.display_name}**."
-    )
+#     await interaction.response.send_message(
+#         f"🛑 Sudoku ended by **{interaction.user.display_name}**."
+#     )
 
 def create_board_embed(path, game):
 

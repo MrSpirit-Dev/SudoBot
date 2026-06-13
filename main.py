@@ -3,27 +3,32 @@ from discord.ext import commands
 from discord import app_commands
 from renderer import render_board, sudoku_to_grid
 from storage import save_games, load_games
-from sudoku import SudokuGame
 import time
 import os
-
-COOLDOWNS = {}
-
-COOLDOWN_TIERS = [5, 10, 30, 60, 120, 300]
-MAX_TIER = len(COOLDOWN_TIERS) - 1
-
-GUILDS = [
-    discord.Object(id=1514625466244534272),
-    discord.Object(id=1501492936175521802),
-    discord.Object(id=1162929561466581152)
-]
-
 
 from sudoku import (
     SudokuGame,
     create_sudoku,
     DIFFICULTIES
 )
+
+
+COOLDOWNS = {}
+
+COOLDOWN_TIERS = [5, 10, 30, 60, 120, 300]
+MAX_TIER = len(COOLDOWN_TIERS) - 1
+
+GUILD_IDS = [
+    1514625466244534272,
+    1501492936175521802,
+    1162929561466581152
+]
+
+GUILDS = [
+    discord.Object(id=guild_id)
+    for guild_id in GUILD_IDS
+]
+
 
 ACTIVE_GAMES = {}
 
@@ -49,10 +54,18 @@ class Client(commands.Bot):
     async def on_message(self,message):
         if message.author == self.user:
             return
-        
-        if message.content.startswith("Testing"):
-            await message.channel.send("Success !")
+    
 
+# -----------------------------------
+# HELPER FUNCTIONS - MAIN
+# -----------------------------------
+
+def check_channel(interaction: discord.Interaction):
+
+    guild_id = interaction.guild.id
+    allowed_channel = ALLOWED_CHANNELS.get(guild_id)
+
+    return interaction.channel.id == allowed_channel
 
 def is_on_cooldown(channel_id: int, user_id: int):
     now = time.time()
@@ -126,18 +139,16 @@ intents.message_content = True
 
 client = Client(command_prefix = "!", intents = intents)
 
-GUILD_IDS = [
-    1514625466244534272,
-    1501492936175521802,
-    1162929561466581152
-]
+
+
+ALLOWED_CHANNELS = {
+    1514625466244534272: 1514625575472468049,
+    1501492936175521802: 1514297063519813772,
+    1162929561466581152: 1514738152294715614
+}
 
 @client.tree.command(name="sudoku-bot", description = "Connection Check ")
-@app_commands.guilds(
-    discord.Object(id=1514625466244534272),
-    discord.Object(id=1501492936175521802),
-    discord.Object(id=1162929561466581152)
-)
+@app_commands.guilds(*GUILDS)
 async def sayHello(interaction : discord.Interaction):
     await interaction.response.send_message("Check bot connection - **HELLO**")
 
@@ -159,17 +170,18 @@ class difficultyMenu(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
-
+        
+        if interaction.channel.id in ACTIVE_GAMES:
+            await interaction.channel.send(
+                "🧩 A Sudoku game is already active in this channel!\n"
+            )
+            return
+        
         await interaction.response.send_message(
             f"You Picked {self.values[0]} Difficulty!"
         )
 
-        if interaction.channel.id in ACTIVE_GAMES:
-            await interaction.channel.send(
-                "🧩 A Sudoku game is already active in this channel!\n"
-                "Use **/sudoku-end** first."
-            )
-            return
+
 
         difficulty = self.values[0]
 
@@ -201,11 +213,7 @@ class difficultyMenu(discord.ui.Select):
     name="sudoku-place",
     description="Attempt to place a digit",
 )
-@app_commands.guilds(
-    discord.Object(id=1514625466244534272),
-    discord.Object(id=1501492936175521802),
-    discord.Object(id=1162929561466581152)
-)
+@app_commands.guilds(*GUILDS)
 async def sudoku_place(
     interaction: discord.Interaction,
     cell: str,
@@ -216,9 +224,16 @@ async def sudoku_place(
         interaction.channel.id
     )
 
+    if not check_channel(interaction):
+        await interaction.response.send_message(
+            "🧩 Please use the Sudoku channel for this command.",
+            ephemeral=True
+        )
+        return
+
     if game is None:
         await interaction.response.send_message(
-            "🧩 No active Sudoku game in this channel!"
+            "🧩 No active Sudoku game use ***/sudoku-new*** to start one !"
         )
         return
 
@@ -322,11 +337,7 @@ async def sudoku_place(
     name="sudoku-board",
     description="View active board"
 )
-@app_commands.guilds(
-    discord.Object(id=1514625466244534272),
-    discord.Object(id=1501492936175521802),
-    discord.Object(id=1162929561466581152)
-)
+@app_commands.guilds(*GUILDS)
 async def sudoku_show(
     interaction: discord.Interaction
 ):
@@ -334,6 +345,13 @@ async def sudoku_show(
     game = ACTIVE_GAMES.get(
         interaction.channel.id
     )
+
+    if not check_channel(interaction):
+        await interaction.response.send_message(
+            "🧩 Please use the Sudoku channel for this command.",
+            ephemeral=True
+        )
+        return
 
     if game is None:
         await interaction.response.send_message(
@@ -360,11 +378,8 @@ async def sudoku_show(
     name="sudoku-end",
     description="End the current Sudoku game"
 )
-@app_commands.guilds(
-    discord.Object(id=1514625466244534272),
-    discord.Object(id=1501492936175521802),
-    discord.Object(id=1162929561466581152)
-)
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.guilds(*GUILDS)
 async def sudoku_end(
     interaction: discord.Interaction
 ):
@@ -430,12 +445,14 @@ class difficultySelector(discord.ui.View):
 
  
 @client.tree.command(name="sudoku-new", description = "Start a new Sudoku game !")
-@app_commands.guilds(
-    discord.Object(id=1514625466244534272),
-    discord.Object(id=1501492936175521802),
-    discord.Object(id=1162929561466581152)
-)
+@app_commands.guilds(*GUILDS)
 async def tryTest(interaction: discord.Interaction):
+    if not check_channel(interaction):
+        await interaction.response.send_message(
+            "🧩 Please use the Sudoku channel for this command.",
+            ephemeral=True
+        )
+        return
 
     await interaction.response.send_message(
         view = difficultySelector()

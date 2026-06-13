@@ -2,6 +2,10 @@ from PIL import Image, ImageDraw, ImageFont
 from themes import THEMES
 
 
+NUMBER_Y_OFFSET = -8 
+SHADOW_OFFSET = 2 
+SHADOW_ALPHA = 80 # soft feel
+
 # =========================
 # RENDER FUNCTION
 # =========================

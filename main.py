@@ -217,10 +217,7 @@ class difficultyMenu(discord.ui.Select):
     name="sudoku-theme",
     description="Change board theme"
 )
-@client.tree.command(
-    name="sudoku-theme",
-    description="Change board theme"
-)
+
 @app_commands.guilds(*GUILDS)
 @app_commands.choices(
     theme=[

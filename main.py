@@ -29,7 +29,7 @@ GUILDS = [
     for guild_id in GUILD_IDS
 ]
 
-CURRENT_THEME = "default"
+SERVER_THEMES = {}
 
 ACTIVE_GAMES = {}
 
@@ -60,6 +60,9 @@ class Client(commands.Bot):
 # -----------------------------------
 # HELPER FUNCTIONS - MAIN
 # -----------------------------------
+
+def get_theme(guild_id):
+    return SERVER_THEMES.get(guild_id, "default")
 
 def check_channel(interaction: discord.Interaction):
 
@@ -199,7 +202,7 @@ class difficultyMenu(discord.ui.Select):
         path = render_board(
             game.board,
             game.original_board,
-            CURRENT_THEME
+            get_theme(interaction.guild.id)
         )
 
         embed, file = create_board_embed(path, game)
@@ -214,26 +217,54 @@ class difficultyMenu(discord.ui.Select):
     name="sudoku-theme",
     description="Change board theme"
 )
-@app_commands.default_permissions(manage_guild=True)
+@client.tree.command(
+    name="sudoku-theme",
+    description="Change board theme"
+)
 @app_commands.guilds(*GUILDS)
 @app_commands.choices(
     theme=[
         app_commands.Choice(name="Default", value="default"),
         app_commands.Choice(name="Forest", value="forest"),
-        app_commands.Choice(name="Royal", value="royal")
+        app_commands.Choice(name="Royal", value="royal"),
+        app_commands.Choice(name="Midnight", value="midnight"),
+        app_commands.Choice(name="Cyberpunk", value="cyberpunk"),
+        app_commands.Choice(name="Frost", value="frost"),
+        app_commands.Choice(name="GameBoy", value="gameboy"),
+        app_commands.Choice(name="Void", value="void"),
     ]
 )
 async def sudoku_theme(
     interaction: discord.Interaction,
     theme: str
 ):
-    global CURRENT_THEME
+    SERVER_THEMES[interaction.guild.id] = theme
 
-    CURRENT_THEME = theme
+    game = ACTIVE_GAMES.get(interaction.channel.id)
 
-    await interaction.response.send_message(
-        f"🎨 Theme changed to **{theme}**"
-    )
+    if game:
+        path = render_board(
+            game.board,
+            game.original_board,
+            get_theme(interaction.guild.id)
+        )
+
+        embed, file = create_board_embed(path, game)
+
+        await interaction.response.send_message(
+            f"🎨 Theme changed to **{get_theme(interaction.guild.id)}**",
+            ephemeral=True
+        )
+
+        await interaction.channel.send(
+            embed=embed,
+            file=file
+        )
+
+    else:
+        await interaction.response.send_message(
+            f"🎨 Theme changed to **{get_theme(interaction.guild.id)}**"
+        )
 
 @client.tree.command(
     name="sudoku-place",
@@ -334,7 +365,7 @@ async def sudoku_place(
     path = render_board(
         game.board,
         game.original_board,
-        CURRENT_THEME
+        get_theme(interaction.guild.id)
     )
 
     embed, file = create_board_embed(path, game)
@@ -389,7 +420,7 @@ async def sudoku_show(
     path = render_board(
         game.board,
         game.original_board,
-        CURRENT_THEME
+        get_theme(interaction.guild.id)
     )
 
     embed, file = create_board_embed(

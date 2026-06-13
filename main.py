@@ -212,7 +212,6 @@ class difficultyMenu(discord.ui.Select):
     name="sudoku-theme",
     description="Change board theme"
 )
-@app_commands.default_permissions(manage_guild=True)
 @app_commands.choices(
     theme=[
         app_commands.Choice(name="Default", value="default"),

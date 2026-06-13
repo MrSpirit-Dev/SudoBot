@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont
-from themes import theme
+from themes import THEMES
 
 
 # =========================

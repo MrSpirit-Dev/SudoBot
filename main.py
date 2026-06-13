@@ -29,6 +29,7 @@ GUILDS = [
     for guild_id in GUILD_IDS
 ]
 
+CURRENT_THEME = "default"
 
 ACTIVE_GAMES = {}
 
@@ -197,7 +198,8 @@ class difficultyMenu(discord.ui.Select):
 
         path = render_board(
             game.board,
-            game.original_board
+            game.original_board,
+            CURRENT_THEME
         )
 
         embed, file = create_board_embed(path, game)
@@ -331,7 +333,8 @@ async def sudoku_place(
 
     path = render_board(
         game.board,
-        game.original_board
+        game.original_board,
+        CURRENT_THEME
     )
 
     embed, file = create_board_embed(path, game)
@@ -385,7 +388,8 @@ async def sudoku_show(
 
     path = render_board(
         game.board,
-        game.original_board
+        game.original_board,
+        CURRENT_THEME
     )
 
     embed, file = create_board_embed(
